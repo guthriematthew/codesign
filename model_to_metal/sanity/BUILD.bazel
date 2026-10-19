@@ -1,0 +1,17 @@
+load("//:defs.bzl", "mm_cc_binary", "mm_cc_test")
+
+mm_cc_test(
+    name = "sanity_test",
+    srcs = ["sanity_test.cc"],
+)
+
+# Canaries: each one must FAIL under its sanitizer config, proving the config is wired up.
+# Tagged manual so `bazel test //...` skips them: bazel test --config=asan //sanity:asan_canary
+[
+    mm_cc_test(
+        name = "%s_canary" % san,
+        srcs = ["%s_canary.cc" % san],
+        tags = ["manual"],
+    )
+    for san in ["asan", "ubsan", "tsan"]
+]

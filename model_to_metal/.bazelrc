@@ -1,0 +1,29 @@
+# C++20 everywhere, including tools built for the host.
+build --cxxopt=-std=c++20 --host_cxxopt=-std=c++20
+
+# Debug by default so the debugger always works.
+build -c dbg
+test --test_output=errors
+
+# Benchmarks: bazel run --config=opt //kernels:bench
+build:opt -c opt
+
+# Sanitizers, via the C++ toolchain's built-in features (raw -fsanitize copts clash with
+# Apple's _FORTIFY_SOURCE define). Keep frame pointers for readable stack traces.
+build:san_common --copt=-fno-omit-frame-pointer --copt=-O1
+build:san_common --strip=never
+
+build:asan --config=san_common
+build:asan --features=asan
+# LeakSanitizer is unsupported on macOS arm64, so leaks are not detected here.
+build:asan --test_env=ASAN_OPTIONS=abort_on_error=1
+
+build:ubsan --config=san_common
+build:ubsan --features=ubsan
+build:ubsan --copt=-fno-sanitize-recover=all
+
+build:tsan --config=san_common
+build:tsan --features=tsan
+
+# Per-user overrides (not committed).
+try-import %workspace%/user.bazelrc
